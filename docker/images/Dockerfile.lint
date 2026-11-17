@@ -1,0 +1,9 @@
+# Образ для стадии lint: sonar-scanner + BSL Language Server. Версии вынесены в ARG.
+FROM eclipse-temurin:17-jre
+ARG SCANNER_VERSION=6.2.1.4610
+ARG BSL_LS_VERSION=0.24.2
+RUN apt-get update && apt-get install -y --no-install-recommends curl unzip ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL -o /tmp/s.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SCANNER_VERSION}-linux-x64.zip \
+ && unzip -q /tmp/s.zip -d /opt && ln -s /opt/sonar-scanner-*/bin/sonar-scanner /usr/local/bin/sonar-scanner && rm /tmp/s.zip
+RUN curl -fsSL -o /opt/bsl-ls.jar https://github.com/1c-syntax/bsl-language-server/releases/download/v${BSL_LS_VERSION}/bsl-language-server-${BSL_LS_VERSION}-exec.jar
+ENTRYPOINT []

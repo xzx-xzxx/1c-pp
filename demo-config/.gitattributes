@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.bsl text eol=lf working-tree-encoding=UTF-8
+*.mdo text eol=lf
+*.cf binary
+*.dt binary

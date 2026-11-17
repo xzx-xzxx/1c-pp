@@ -1,0 +1,15 @@
+.env
+*.env
+!.env.example
+*.cf
+*.cfe
+*.dt
+*.lic
+*.pem
+*.key
+distr/
+license/
+backups/
+node_modules/
+__pycache__/
+dist/
