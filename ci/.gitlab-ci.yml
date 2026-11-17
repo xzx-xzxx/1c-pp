@@ -11,12 +11,19 @@ workflow:
 
 variables:
   APP_NAME: onec-config
-  SONAR_HOST_URL: $SONAR_HOST_URL   # CI variable (protected)
+  # SONAR_HOST_URL, SONAR_TOKEN, ONEC_ENABLED задаются как CI variables проекта (SONAR_TOKEN — masked)
 
 .onec: &onec
   tags: [onec]
   variables:
     APP_VERSION: ${CI_COMMIT_TAG:-0.0.0-${CI_COMMIT_SHORT_SHA}}
+  # Стадии 1С включаются переменной ONEC_ENABLED=true (когда на раннере onec есть платформа). Иначе их нет в pipeline.
+  rules:
+    - if: $ONEC_ENABLED != "true"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH =~ /^release\//
+    - if: $CI_COMMIT_TAG
 
 lint:
   stage: lint
@@ -58,6 +65,8 @@ artifact:
     paths: ["build/*.cf"]
     expire_in: never
   rules:
+    - if: $ONEC_ENABLED != "true"
+      when: never
     - if: $CI_COMMIT_BRANCH =~ /^release\// || $CI_COMMIT_TAG
 
 deploy-test:
@@ -67,6 +76,8 @@ deploy-test:
   script: [ci/scripts/deploy-test.sh]
   environment: {name: test}
   rules:
+    - if: $ONEC_ENABLED != "true"
+      when: never
     - if: $CI_COMMIT_BRANCH =~ /^release\//
 
 deploy-prod:
@@ -78,5 +89,7 @@ deploy-prod:
   when: manual
   allow_failure: false
   rules:
+    - if: $ONEC_ENABLED != "true"
+      when: never
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
       when: manual

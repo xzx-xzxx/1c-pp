@@ -7,8 +7,7 @@ DEST="${BACKUP_DIR:-../backups}"
 read -r -p "Восстановить GitLab и Sonar из метки $TS? Текущие данные будут перезаписаны [yes/N] " a; [ "$a" = yes ] || exit 1
 docker compose exec -T gitlab gitlab-ctl stop puma
 docker compose exec -T gitlab gitlab-ctl stop sidekiq
-docker compose exec -T gitlab gitlab-backup restore BACKUP="${TS}_gitlab_backup" force=yes || \
-  docker compose exec -T gitlab gitlab-backup restore BACKUP="$TS" force=yes
+docker compose exec -T gitlab gitlab-backup restore BACKUP="$TS" force=yes
 docker compose cp "$DEST/gitlab/gitlab-secrets-$TS.json" gitlab:/etc/gitlab/gitlab-secrets.json
 docker compose restart gitlab
 docker compose stop sonarqube
