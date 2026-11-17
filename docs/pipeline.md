@@ -12,22 +12,22 @@
 | deploy-prod | onec | manual: бэкап → обновление → проверка → откат | артефакт → прод ИБ | тег `v*`, вручную |
 
 ## Переменные CI
-`SONAR_HOST_URL`, `SONAR_TOKEN` (masked), `LINT_IMAGE`, `TEST_IB_PATH`, `TEST_STAND_IB`, `PROD_IB`, `BACKUP_DIR` (protected), `CONFIRM=yes` для prod.
+`SONAR_HOST_URL`, `SONAR_TOKEN` (masked), `TEST_IB_PATH`, `TEST_STAND_IB`, `PROD_IB`, `BACKUP_DIR` (protected), `CONFIRM=yes` для prod.
 
-## Lint: блокирующие диагностики и quality gate
-Quality gate `onec-gate` (настраивается в Sonar): 0 новых Blocker/Critical, покрытие не проверяется на прототипе. Обоснование каждой блокирующей диагностики — в таблице ниже.
+## Lint: что блокирует merge (проверено на стенде)
+Quality gate `onec-gate` (создаётся `ci/scripts/sonar-setup.sh`) падает, если в проекте есть хотя бы один issue серьёзности **Blocker** или **Critical**. Проверено: модуль с `ParseError`, `UsingHardcodeSecretInformation`, `UsingHardcodePath`, `UsingHardcodeNetworkAddress` (все Critical) → gate FAILED, сканер завершается с ошибкой; чистый модуль → PASSED.
 
-| Диагностика BSL LS | Почему блокирует |
-| --- | --- |
-| ParseError | код не разбирается — сборка заведомо сломается |
-| UsingHardcodeSecretInformation | пароли и ключи в исходниках |
-| UsingHardcodePath / UsingHardcodeNetworkAddress | код привязан к конкретной машине, ломается на другом контуре |
-| CommitTransactionOutsideTryCatch | риск зависшей транзакции и потери данных |
-| DeletingCollectionItem | ошибка выполнения при обходе коллекции |
-| ExecuteExternalCodeInCommonModule | выполнение произвольного кода — угроза безопасности |
-| UsingFindElementByString | неоднозначный поиск, ошибки в проде |
-| UnusedLocalVariable | предупреждение, не блокирует; в конфиге включено для отчёта |
+Набор правил определяет профиль «BSL Language Server rules» плагина, **не** `ci/.bsl-language-server.json` (отключение диагностики в нём на отчёт Sonar не влияет; файл нужен только для локального BSL LS в IDE). Блокируют все правила, которым плагин ставит Critical/Blocker; Major (например, `UnusedLocalVariable`, `EmptyCodeBlock`) — только в отчёте. Чтобы изменить блокирующий набор, правится профиль качества или серьёзность правил в Sonar.
 
-> Список — стартовый; уточняется командой после первого прогона на демо-конфигурации. Фактическая серьёзность в Sonar берётся из плагина — проверить на стенде.
+Обоснование основных блокирующих правил:
+
+| Диагностика | Серьёзность в Sonar | Почему блокирует |
+| --- | --- | --- |
+| ParseError | Critical | код не разбирается, сборка заведомо сломается |
+| UsingHardcodeSecretInformation | Critical | пароли и ключи в исходниках |
+| UsingHardcodePath | Critical | привязка к конкретной машине, ломается на другом контуре |
+| UsingHardcodeNetworkAddress | Critical | привязка к адресу, ломается на другом контуре |
+
+Остальные правила и их серьёзность — по профилю плагина; полный список после настройки уточняет автор PR S-A.
 
 Ограничение прототипа: стадии build/test/deploy описаны, не запускались без платформы 1С (`license.md`).

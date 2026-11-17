@@ -13,3 +13,4 @@ backups/
 node_modules/
 __pycache__/
 dist/
+docker/sonar-plugins/

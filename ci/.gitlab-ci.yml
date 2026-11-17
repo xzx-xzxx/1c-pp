@@ -21,10 +21,11 @@ variables:
 lint:
   stage: lint
   tags: [docker]
-  image: $LINT_IMAGE   # собирается из docker/images/Dockerfile.lint
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
   script:
-    - sonar-scanner -Dsonar.token=$SONAR_TOKEN -Dsonar.host.url=$SONAR_HOST_URL
-      -Dsonar.projectVersion=$CI_COMMIT_SHORT_SHA
+    - sonar-scanner -Dsonar.token=$SONAR_TOKEN -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.projectVersion=$CI_COMMIT_SHORT_SHA
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH =~ /^release\//
