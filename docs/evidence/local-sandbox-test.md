@@ -8,6 +8,6 @@
 - Проект `onec-config`, MR из `feature/good-change` и `feature/bad-change`: pipeline стартовали сами.
   - good: pipeline `success`, статус MR `mergeable`.
   - bad: `lint` → `QUALITY GATE STATUS: FAILED`, pipeline `failed`, статус MR `ci_must_pass`, `PUT .../merge` → `405 Method Not Allowed`.
-- `ci/scripts/backup.sh` создал бэкап GitLab (tar) и дамп Sonar.
+- `ci/scripts/backup.sh` создал бэкап GitLab (tar) и дамп Sonar. После бэкапа создан лишний проект `tmp-after-backup`; `ci/scripts/restore.sh <метка>` отработал до конца, проект исчез, `root/onec-config` и проект в Sonar на месте. В выводе restore 4 строки `must be owner of extension pg_trgm/btree_gist` (известное безвредное сообщение при восстановлении GitLab).
 
 Не проверялось: стадии build/test/deploy (нужна платформа 1С), HTTPS и 2FA, скрипты для 1С (`vrunner`/`ring`), EDT.
