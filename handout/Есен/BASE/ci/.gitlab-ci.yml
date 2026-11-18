@@ -1,0 +1,95 @@
+# Каркас pipeline для репозитория конфигурации 1С (формат EDT).
+# lint работает на docker-runner без платформы. build/test/deploy требуют раннер `onec` (платформа + лицензия):
+# ОГРАНИЧЕНИЕ ПРОТОТИПА — пока платформа не установлена, эти стадии описаны, но не запускались.
+stages: [lint, build, test, artifact, deploy-test, deploy-prod]
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH =~ /^release\//
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
+
+variables:
+  APP_NAME: onec-config
+  # SONAR_HOST_URL, SONAR_TOKEN, ONEC_ENABLED задаются как CI variables проекта (SONAR_TOKEN — masked)
+
+.onec: &onec
+  tags: [onec]
+  variables:
+    APP_VERSION: ${CI_COMMIT_TAG:-0.0.0-${CI_COMMIT_SHORT_SHA}}
+  # Стадии 1С включаются переменной ONEC_ENABLED=true (когда на раннере onec есть платформа). Иначе их нет в pipeline.
+  rules:
+    - if: $ONEC_ENABLED != "true"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH =~ /^release\//
+    - if: $CI_COMMIT_TAG
+
+lint:
+  stage: lint
+  tags: [docker]
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  script:
+    - sonar-scanner -Dsonar.token=$SONAR_TOKEN -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.projectVersion=$CI_COMMIT_SHORT_SHA
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH =~ /^release\//
+
+build:
+  <<: *onec
+  stage: build
+  script: [ci/scripts/build.sh]
+  artifacts:
+    paths: ["build/*.cf"]
+    expire_in: 1 week
+
+test:
+  <<: *onec
+  stage: test
+  needs: [build]
+  script: [ci/scripts/test.sh]
+  artifacts:
+    when: always
+    reports:
+      junit: build/junit.xml
+
+artifact:
+  <<: *onec
+  stage: artifact
+  needs: [build, test]
+  script: ["echo Версия $APP_VERSION"]
+  artifacts:
+    name: "$APP_NAME-$APP_VERSION"
+    paths: ["build/*.cf"]
+    expire_in: never
+  rules:
+    - if: $ONEC_ENABLED != "true"
+      when: never
+    - if: $CI_COMMIT_BRANCH =~ /^release\// || $CI_COMMIT_TAG
+
+deploy-test:
+  <<: *onec
+  stage: deploy-test
+  needs: [artifact]
+  script: [ci/scripts/deploy-test.sh]
+  environment: {name: test}
+  rules:
+    - if: $ONEC_ENABLED != "true"
+      when: never
+    - if: $CI_COMMIT_BRANCH =~ /^release\//
+
+deploy-prod:
+  <<: *onec
+  stage: deploy-prod
+  needs: [artifact]
+  script: [ci/scripts/deploy-prod.sh]
+  environment: {name: production}
+  when: manual
+  allow_failure: false
+  rules:
+    - if: $ONEC_ENABLED != "true"
+      when: never
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
+      when: manual
