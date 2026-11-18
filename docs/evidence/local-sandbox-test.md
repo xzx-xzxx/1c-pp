@@ -11,3 +11,5 @@
 - `ci/scripts/backup.sh` создал бэкап GitLab (tar) и дамп Sonar. После бэкапа создан лишний проект `tmp-after-backup`; `ci/scripts/restore.sh <метка>` отработал до конца, проект исчез, `root/onec-config` и проект в Sonar на месте. В выводе restore 4 строки `must be owner of extension pg_trgm/btree_gist` (известное безвредное сообщение при восстановлении GitLab).
 
 Не проверялось: стадии build/test/deploy (нужна платформа 1С), HTTPS и 2FA, скрипты для 1С (`vrunner`/`ring`), EDT.
+
+Дополнительно проверено (песочница): защита `main`, `release/*` и тегов `v*` через API (push никому, merge Maintainers, force push выключен); прямой push в `main` отклонён: `pre-receive hook declined`. Команды — в `РУКАМИ.md` Вероники.
