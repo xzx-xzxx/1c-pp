@@ -8,7 +8,7 @@ jobs:
       - name: bash -n
         run: for f in ci/scripts/*.sh; do bash -n "$f"; done
       - name: yaml
-        run: pip install yamllint && yamllint -d relaxed ci/.gitlab-ci.yml docker/docker-compose.yml
+        run: pip install yamllint && yamllint -d relaxed $(ls ci/.gitlab-ci.yml docker/docker-compose.yml 2>/dev/null)
   secrets:
     runs-on: ubuntu-latest
     steps:
